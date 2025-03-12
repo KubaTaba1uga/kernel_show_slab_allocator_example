@@ -30,6 +30,7 @@ static int __init show_slab_allocator_init(void) {
     buf[i] = i;
   }
 
+  pr_info("Allocated bytes: %zu\n", ksize(buf));
   for (int i = max_buf_size - 1; i >= max_buf_size - 5; i--) {
     pr_info("%d\n", buf[i]);
   }
@@ -42,6 +43,7 @@ static int __init show_slab_allocator_init(void) {
     return -ENOMEM;
   }
 
+  pr_info("Allocated bytes: %zu\n", ksize(buf));
   for (int i = 0; i < 5; i++) {
     pr_info("%d\n", buf[i]);
   }
