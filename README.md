@@ -1,41 +1,45 @@
-# show_slug_allocator
+# show_slab_allocator
 
-A simple Linux kernel module that demonstrates memory allocation and deallocation using the buddy system allocator (BSA). The module showcases different memory allocation techniques in kernel space using functions like `alloc_page`, `get_zeroed_page`, and `alloc_pages`.
+This repository contains a simple Linux kernel module that demonstrates memory allocation and deallocation using the slab allocator. 
 
-## Features
+## Usage
 
-- **Buddy System Allocation:** Demonstrates allocation of single and multiple pages.
-- **Memory Management Examples:** Shows how to initialize and free allocated memory.
+1. **Install Dependencies:**
 
-## Building
-
-1. Install the required build tools and kernel headers:
    ```bash
    sudo apt-get install build-essential linux-headers-$(uname -r)
    ```
-2. Build the module:
+
+2. **Build the Module:**
+
    ```bash
    make
    ```
 
-## Usage
+3. **Insert the Module:**
 
-1. **Load the Module:**
    ```bash
-   sudo insmod show_slug_allocator.ko
+   sudo insmod show_slab_allocator.ko
    ```
-2. **Check Kernel Log for Output:**
+
+4. **Verify Kernel Output:**
+
+   Check the kernel log to see the allocation details:
+
    ```bash
    dmesg | tail
    ```
-3. **Unload the Module:**
+
+5. **Remove the Module:**
+
    ```bash
-   sudo rmmod show_slug_allocator
+   sudo rmmod show_slab_allocator
    ```
 
-## Cleaning Up
+## Clean Up
 
-To remove build artifacts:
+To remove build artifacts, run:
+
 ```bash
 make clean
 ```
@@ -43,3 +47,4 @@ make clean
 ## License
 
 Dual MIT/GPL
+
