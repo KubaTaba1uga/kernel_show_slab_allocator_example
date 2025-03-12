@@ -1,59 +1,96 @@
 /*
- * show_slab_allocator driver
+ * show_slab_allocator
  ****************************************************************
  * Brief Description:
- * A simple module which shows how allocate and deallocate memory using
- *  slab allocator.
+ * A kernel module that demonstrates slab memory allocation for an array
+ * of five pointers. In the module's initialization code, each pointer in the
+ * array is allocated 1 KB of memory using kmalloc().
+ *
+ * Memory Layout Diagram:
+ *
+ *  +-------+-------+-------+-------+-------+
+ *  | 0  .  | 1  .  | 2  .  | 3  .  | 4  .  |
+ *  +---|---+---|---+---|---+---|---+---|---+
+ *      v       v       v       v       v
+ *    +---+   +---+   +---+   +---+   +---+
+ *    |mem|   |mem|   |mem|   |mem|   |mem|   <-- 1 KB each
+ *
+ * In the module cleanup code, all allocated memory is freed. The module takes
+ * care to handle error cases by checking each kmalloc() call and ensuring that
+ * any memory successfully allocated is freed if an error occurs.
  */
+#include "linux/gfp_types.h"
 #include "linux/slab.h"
+#include "linux/types.h"
 #include <linux/gfp.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/printk.h>
 
 MODULE_AUTHOR("KubaTaba1uga");
-MODULE_DESCRIPTION("a simple LKM showing BSA usage");
+MODULE_DESCRIPTION("a simple LKM showing SLAB usage");
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_VERSION("0.1");
 
-static int __init show_slab_allocator_init(void) {
-  pr_info("Inserted\n");
+static ssize_t slab_array_len;
+static char **slab_array_ptr;
 
-  int max_buf_size = 2048;
-  u16 *buf = kmalloc(sizeof(u16) * max_buf_size, GFP_KERNEL);
-  if (!buf) {
-    pr_err("Unable to allocate memory with `kmalloc`\n");
-    return -ENOMEM;
-  }
+static int __init show_slab_allocator_init(void)
+{
+	int err = 0;
 
-  for (int i = 0; i < max_buf_size; i++) {
-    buf[i] = i;
-  }
+	pr_info("Inserted\n");
 
-  pr_info("Allocated bytes: %zu\n", ksize(buf));
-  for (int i = max_buf_size - 1; i >= max_buf_size - 5; i--) {
-    pr_info("%d\n", buf[i]);
-  }
+	slab_array_len = 5;
+	slab_array_ptr = kzalloc(sizeof(int *) * slab_array_len, GFP_KERNEL);
+	if (!slab_array_ptr) {
+		pr_err("Unable to allocate memory for `slab_array_ptr`\n");
+		err = -ENOMEM;
+		goto cleanup;
+	}
 
-  kfree(buf);
+	for (ssize_t i = 0; i < slab_array_len; i++) {
+		ssize_t buf_size = 1024;
+		char *buf;
 
-  buf = kzalloc(sizeof(u16) * max_buf_size, GFP_KERNEL);
-  if (!buf) {
-    pr_err("Unable to allocate memory with `kzalloc`\n");
-    return -ENOMEM;
-  }
+		buf = slab_array_ptr[i] = kmalloc(buf_size, GFP_KERNEL);
+		if (!buf) {
+			pr_err("Unable to allocate memory for `slab_array_ptr[%zd]`\n", i);
+			err = -ENOMEM;
+			goto cleanup_slab_array_ptr;
+		}
+	}
 
-  pr_info("Allocated bytes: %zu\n", ksize(buf));
-  for (int i = 0; i < 5; i++) {
-    pr_info("%d\n", buf[i]);
-  }
+	memcpy(slab_array_ptr[0], "as", 3);
+	memcpy(slab_array_ptr[1], "bs", 3);
+	memcpy(slab_array_ptr[2], "cs", 3);
+	memcpy(slab_array_ptr[3], "ds", 3);
+	memcpy(slab_array_ptr[4], "es", 3);
 
-  kfree(buf);
+	for (ssize_t i = 0; i < slab_array_len; i++) {
 
-  return 0;
+		char *buf = slab_array_ptr[i];
+
+		pr_info("%zd:%s\n", i, buf);
+	}
+
+ cleanup_slab_array_ptr:
+	for (ssize_t i = 0; i < slab_array_len; i++) {
+		if (!slab_array_ptr[i])
+			continue;
+		kfree(slab_array_ptr[i]);
+	}
+
+	kfree(slab_array_ptr);
+
+ cleanup:
+	return err;
 }
 
-static void __exit show_slab_allocator_exit(void) { pr_info("Removed\n"); }
+static void __exit show_slab_allocator_exit(void)
+{
+	pr_info("Removed\n");
+}
 
 module_init(show_slab_allocator_init);
 module_exit(show_slab_allocator_exit);
