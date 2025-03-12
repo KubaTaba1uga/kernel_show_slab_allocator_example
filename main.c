@@ -19,9 +19,9 @@
  * care to handle error cases by checking each kmalloc() call and ensuring that
  * any memory successfully allocated is freed if an error occurs.
  */
-#include "linux/gfp_types.h"
-#include "linux/slab.h"
-#include "linux/types.h"
+#include <linux/gfp_types.h>
+#include <linux/slab.h>
+#include <linux/types.h>
 #include <linux/gfp.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -37,7 +37,8 @@ static char **slab_array_ptr;
 
 static int __init show_slab_allocator_init(void)
 {
-	int err = 0;
+	ssize_t buf_size = 1024;
+	int err;
 
 	pr_info("Inserted\n");
 
@@ -50,11 +51,8 @@ static int __init show_slab_allocator_init(void)
 	}
 
 	for (ssize_t i = 0; i < slab_array_len; i++) {
-		ssize_t buf_size = 1024;
-		char *buf;
-
-		buf = slab_array_ptr[i] = kmalloc(buf_size, GFP_KERNEL);
-		if (!buf) {
+		slab_array_ptr[i] = kmalloc(buf_size, GFP_KERNEL);
+		if (!slab_array_ptr[i]) {
 			pr_err("Unable to allocate memory for `slab_array_ptr[%zd]`\n", i);
 			err = -ENOMEM;
 			goto cleanup_slab_array_ptr;
@@ -68,11 +66,12 @@ static int __init show_slab_allocator_init(void)
 	memcpy(slab_array_ptr[4], "es", 3);
 
 	for (ssize_t i = 0; i < slab_array_len; i++) {
-
 		char *buf = slab_array_ptr[i];
 
 		pr_info("%zd:%s\n", i, buf);
 	}
+
+	return 0;
 
  cleanup_slab_array_ptr:
 	for (ssize_t i = 0; i < slab_array_len; i++) {
@@ -89,6 +88,12 @@ static int __init show_slab_allocator_init(void)
 
 static void __exit show_slab_allocator_exit(void)
 {
+	for (ssize_t i = 0; i < slab_array_len; i++) {
+		kfree(slab_array_ptr[i]);
+	}
+
+	kfree(slab_array_ptr);
+
 	pr_info("Removed\n");
 }
 
